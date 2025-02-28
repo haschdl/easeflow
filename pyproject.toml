@@ -1,0 +1,23 @@
+[project]
+name = "easeflow"
+requires-python = ">=3.12,<3.13"
+version = "0.1.0"
+description = "Synthetic data generation that looks good."
+authors = [
+    {name = "Half Scheidl", email = "half.scheidl@gmail.com"}
+]
+dependencies = [
+    "perlin-noise==1.13",
+    "easing_functions==1.0.4",
+    "matplotlib",
+
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "python>=3.12"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^6.2.4"
+databricks-connect = "16.2.0"
+ipywidgets="^8.0.0"
