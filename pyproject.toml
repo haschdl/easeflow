@@ -8,8 +8,7 @@ authors = [
 ]
 dependencies = [
     "perlin-noise==1.13",
-    "easing_functions==1.0.4",
-    "matplotlib",
+    "easing_functions==1.0.4"
 ]
 
 [build-system]
