@@ -15,11 +15,61 @@ def get_spark() -> SparkSession:
         return SparkSession.builder.getOrCreate()
 
 
-T = TypeVar("T", bound=easing_functions.easing.EasingBase)
+T = TypeVar("T", easing_functions.easing.EasingBase, None)
+
+
+def make_udf_noise(
+    min_value: float,
+    max_value: float,
+    noise_speed: float,
+    octaves: int = 10,
+    seed: int = 1,
+) -> callable:
+    """
+    Creates a PySpark UDF (User Defined Function) that returns a Perlin noise value
+    between `min_value` and `max_value` based on the input `t` and `noise_speed`.
+
+    Useful when you need generate data with smooth, continuous variation that is
+    not strictly random.
+
+    Args:
+    min_value (float): The minimum value of the Perlin noise range.
+    max_value (float): The maximum value of the Perlin noise range.
+    noise_speed (float): Controls the speed/frequency of Perlin noise variation.
+    octaves (int): The number of octaves in the Perlin noise function.
+    seed (int): The seed value for the Perlin noise generator.
+
+    Returns:
+    pyspark.sql.functions.udf: A PySpark UDF that takes one argument:
+        - `t` (float): A normalized value in the range [0, 1].
+
+    Example:
+    --------
+    ```python
+    # Create a Perlin noise UDF
+    noise_udf = make_udf_noise(min_value=500, max_value=1000, noise_speed=0.01)
+    ```
+    """
+    _noise = PerlinNoise(octaves=octaves, seed=seed)
+
+    def get_val(t: float) -> float:
+        """
+        Computes the Perlin noise value based on the input `t` and `noise_speed`.
+
+        Args:
+            t (float): Normalized input in the range [0, 1].
+
+        Returns:
+            float: Perlin noise value.
+        """
+        noise_factor = _noise(t * noise_speed)  # [-1, 1]
+        return min_value + (max_value - min_value) * (1 + noise_factor) / 2
+
+    return F.udf(get_val, FloatType(), useArrow=True)
 
 
 def make_udf(
-    easing_function: T,
+    easing_function: T = None,
     start_value: float = 0.0,
     end_value: float = 1.0,
     noise_speed: float = 1.0,
@@ -67,7 +117,10 @@ def make_udf(
     _noise = PerlinNoise(octaves=octaves, seed=seed)
 
     # Initialize the easing function for the range [0, 1]
-    easing = easing_function(start=start_value, end=end_value, duration=1)
+    if easing_function is not None:
+        easing = easing_function(start=start_value, end=end_value, duration=1)
+    else:
+        easing = lambda t: 1
 
     def get_val(t: float, noise_pct: float) -> float:
         """
