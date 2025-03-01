@@ -23,8 +23,8 @@ T = TypeVar("T", bound=easing_functions.easing.EasingBase)
 
 def make_udf(
     easing_function: T,
-    min_val: float = 0.0,
-    max_val: float = 1.0,
+    start_value: float = 0.0,
+    end_value: float = 1.0,
     noise_speed: float = 1.0,
 ) -> callable:
     """
@@ -32,13 +32,13 @@ def make_udf(
     with optional Perlin noise. This version assumes that the input `t` is normalized
     between 0 and 1.
 
-    The easing function generates smooth transitions between `min_val` and `max_val`,
+    The easing function generates smooth transitions between `start_value` and `end_value`,
     and Perlin noise is optionally added as a percentage-based variation.
 
     Args:
         easing_function (T): The easing function to apply. Must be a subclass of `easing_functions.easing.EasingBase`.
-        min_val (float): The minimum value of the output range.
-        max_val (float): The maximum value of the output range.
+        start_value (float): The initial value of the transition.
+        end_value (float): The final value of the transition.
         noise_speed (float): Controls the speed/frequency of Perlin noise variation.
 
     Returns:
@@ -50,7 +50,9 @@ def make_udf(
     --------
     ```python
     # Create an easing function UDF with a custom noise speed
-    easing_udf = make_udf(easy.QuinticEaseIn, min_val=500, max_val=1000, noise_speed=0.01)
+    easing_udf = make_udf(
+        easy.QuinticEaseIn, start_value=500, end_value=1000, noise_speed=0.01
+    )
 
     # Apply to a DataFrame
     df = (
@@ -64,7 +66,7 @@ def make_udf(
     """
 
     # Initialize the easing function for the range [0, 1]
-    easing = easing_function(start=min_val, end=max_val, duration=1)
+    easing = easing_function(start=start_value, end=end_value, duration=1)
 
     def get_val(t: float, noise_pct: float) -> float:
         """
@@ -110,5 +112,7 @@ def norm_df(n: int):
     ```
     """
     return (
-        get_spark().range(0, n).withColumn("t", (F.col("id") / (n - 1)).cast("double"))
+        get_spark()
+        .range(0, n)
+        .withColumn("t", (F.col("id") / (n - 1)).cast(FloatType()))
     )
