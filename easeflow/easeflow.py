@@ -107,7 +107,9 @@ def make_udf(
         """
         y0 = easing(t)  # Compute base easing value
         # Scale the noise to the easing range and apply it [-0.5, 0.5]
-        y1 = y0 * (1 + noise_pct * (noise(t * NOISE_SPEED) - 0.5))
+
+        y1 = y0 + y0 * noise_pct * 2.0 * (noise(t * NOISE_SPEED) - 0.5)
+
         return y1
 
     return F.udf(get_val, FloatType(), useArrow=True)
