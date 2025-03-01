@@ -12,4 +12,6 @@ table = sqlContext.table
 getArgument = dbutils.widgets.getArgument
 
 def displayHTML(html): ...
+
 def display(input=None, *args, **kwargs): ...
+

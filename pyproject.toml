@@ -10,7 +10,6 @@ dependencies = [
     "perlin-noise==1.13",
     "easing_functions==1.0.4",
     "matplotlib",
-
 ]
 
 [build-system]
@@ -19,5 +18,5 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^6.2.4"
-databricks-connect = "16.1.0"
+databricks-connect = "16.0.2"
 ipywidgets="^8.0.0"

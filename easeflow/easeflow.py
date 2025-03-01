@@ -3,7 +3,17 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import FloatType
 import easing_functions
 from typing import TypeVar
-import spark
+from pyspark.sql import SparkSession, DataFrame
+
+
+def get_spark() -> SparkSession:
+    try:
+        from databricks.connect import DatabricksSession
+
+        return DatabricksSession.builder.getOrCreate()
+    except ImportError:
+        return SparkSession.builder.getOrCreate()
+
 
 # Constants
 NOISE_SPEED = 0.005
@@ -140,4 +150,6 @@ def norm_df(n: int):
     +---+------------------+
     ```
     """
-    return spark.range(0, n).withColumn("t", (F.col("id") / (n - 1)).cast("double"))
+    return (
+        get_spark().range(0, n).withColumn("t", (F.col("id") / (n - 1)).cast("double"))
+    )
