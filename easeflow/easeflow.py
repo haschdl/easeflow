@@ -3,7 +3,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import FloatType
 import easing_functions
 from typing import TypeVar
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import SparkSession
 
 
 def get_spark() -> SparkSession:
@@ -15,9 +15,6 @@ def get_spark() -> SparkSession:
         return SparkSession.builder.getOrCreate()
 
 
-# Constants
-NOISE_SPEED = 0.005
-
 # Create PerlinNoise object once
 noise = PerlinNoise(octaves=10, seed=1)
 
@@ -25,7 +22,10 @@ T = TypeVar("T", bound=easing_functions.easing.EasingBase)
 
 
 def make_udf(
-    easing_function: T, min_val: float = 0.0, max_val: float = 1.0
+    easing_function: T,
+    min_val: float = 0.0,
+    max_val: float = 1.0,
+    noise_speed: float = 1.0,
 ) -> callable:
     """
     Creates a PySpark UDF (User Defined Function) that applies an easing function
@@ -39,56 +39,28 @@ def make_udf(
         easing_function (T): The easing function to apply. Must be a subclass of `easing_functions.easing.EasingBase`.
         min_val (float): The minimum value of the output range.
         max_val (float): The maximum value of the output range.
+        noise_speed (float): Controls the speed/frequency of Perlin noise variation.
 
     Returns:
         pyspark.sql.functions.udf: A PySpark UDF that takes two arguments:
             - `t` (float): A normalized value in the range [0, 1].
             - `noise_pct` (float): The percentage of noise to apply (0 = no noise, 1 = max noise).
 
-    Example 1: Using `norm_df` for Normalized Input
-    -----------------------------------------------
+    Example:
+    --------
     ```python
-    # Create an easing function UDF
-    easing_udf = make_udf(easy.QuinticEaseIn, min_val=500, max_val=1000)
+    # Create an easing function UDF with a custom noise speed
+    easing_udf = make_udf(easy.QuinticEaseIn, min_val=500, max_val=1000, noise_speed=0.01)
 
-    # Generate a DataFrame with easing function applied
+    # Apply to a DataFrame
     df = (
         norm_df(365)
-        .withColumn("v", easing_udf(F.col("t"), lit(0)))  # No noise
-        .withColumn("v_noise", easing_udf(F.col("t"), lit(0.3)))  # With noise
+        .withColumn("v", easing_udf(F.col("t"), F.lit(0)))  # No noise
+        .withColumn("v_noise", easing_udf(F.col("t"), F.lit(0.3)))  # With noise
     )
 
-    # Display DataFrame in Databricks
     display(df)
     ```
-
-    Example 2: Generating a Time-Series with Dates
-    ----------------------------------------------
-    ```python
-    import datetime
-
-    # Define start date
-    dataset_len = 365
-    start_date = datetime.datetime.today().replace(day=1) - datetime.timedelta(days=dataset_len)
-
-    # Generate normalized data with a date column
-    df = (
-        norm_df(dataset_len)
-        .withColumn("date", F.date_add(lit(start_date), F.col("id").cast("integer")))  # Map ID to a date
-        .withColumn("v", easing_udf(F.col("t"), lit(0)))  # No noise
-        .withColumn("v_noise", easing_udf(F.col("t"), lit(0.3)))  # With noise
-    )
-
-    # Display the results in Databricks
-    display(df)
-    ```
-
-    Notes:
-    ------
-    - **Best Practice**: Use `norm_df(n)` instead of manually normalizing values.
-    - The `"id"` column allows easy **date mapping** for time-series data.
-    - The `"t"` column should be used as input for easing functions.
-    - Works well for **generating synthetic datasets** with smooth transitions and noise.
     """
 
     # Initialize the easing function for the range [0, 1]
@@ -103,13 +75,11 @@ def make_udf(
             noise_pct (float): Percentage of noise to apply.
 
         Returns:
-            float: Smoothed output value.
+            float: Smoothed output value with Perlin noise applied.
         """
         y0 = easing(t)  # Compute base easing value
-        # Scale the noise to the easing range and apply it [-0.5, 0.5]
-
-        y1 = y0 + y0 * noise_pct * 2.0 * (noise(t * NOISE_SPEED) - 0.5)
-
+        noise_factor = (noise(t * noise_speed) - 0.5) * 2  # Normalize noise to [-1, 1]
+        y1 = y0 * (1 + noise_pct * noise_factor)  # Apply scaled noise effect
         return y1
 
     return F.udf(get_val, FloatType(), useArrow=True)
@@ -132,25 +102,11 @@ def norm_df(n: int):
             - 'id' (int): Row index.
             - 't' (float): Normalized value between 0 and 1.
 
-    Example Usage in Databricks:
-    ----------------------------
+    Example:
+    --------
     ```python
     df = norm_df(365)
     display(df)
-    ```
-
-    Expected Output:
-    ----------------
-    ```
-    +---+------------------+
-    | id|                 t|
-    +---+------------------+
-    |  0|  0.0             |
-    |  1|  0.00274         |
-    |  2|  0.00548         |
-    |...|  ...             |
-    |364|  1.0             |
-    +---+------------------+
     ```
     """
     return (
