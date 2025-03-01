@@ -19,5 +19,5 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^6.2.4"
-databricks-connect = "16.2.0"
+databricks-connect = "16.1.0"
 ipywidgets="^8.0.0"

@@ -297,13 +297,13 @@ tests = ["pytest", "pytest-cov", "pytest-xdist"]
 
 [[package]]
 name = "databricks-connect"
-version = "16.2.0"
+version = "16.1.0"
 description = "Databricks Connect Client"
 optional = false
-python-versions = "==3.12.*"
+python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "databricks_connect-16.2.0-py2.py3-none-any.whl", hash = "sha256:928be74cc7ee20260c80a3656366ab0c98f39d281d212f130b5bdb417dd45ed3"},
+    {file = "databricks_connect-16.1.0-py2.py3-none-any.whl", hash = "sha256:d7d3a9bb2bb6fd09e35f4d159815205a1827ae7b052a6accfd495ead7d2a0811"},
 ]
 
 [package.dependencies]
@@ -638,6 +638,7 @@ prompt_toolkit = ">=3.0.41,<3.1.0"
 pygments = ">=2.4.0"
 stack_data = "*"
 traitlets = ">=5.13.0"
+typing_extensions = {version = ">=4.6", markers = "python_version < \"3.12\""}
 
 [package.extras]
 all = ["ipython[doc,matplotlib,test,test-extra]"]
@@ -990,7 +991,10 @@ files = [
 ]
 
 [package.dependencies]
-numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
+numpy = [
+    {version = ">=1.23.2", markers = "python_version == \"3.11\""},
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
 tzdata = ">=2022.7"
@@ -1540,6 +1544,19 @@ docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,<8.2)", "pytest-mock", "pytest-mypy-testing"]
 
 [[package]]
+name = "typing-extensions"
+version = "4.12.2"
+description = "Backported and Experimental Type Hints for Python 3.8+"
+optional = false
+python-versions = ">=3.8"
+groups = ["dev"]
+markers = "python_version == \"3.11\""
+files = [
+    {file = "typing_extensions-4.12.2-py3-none-any.whl", hash = "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d"},
+    {file = "typing_extensions-4.12.2.tar.gz", hash = "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8"},
+]
+
+[[package]]
 name = "tzdata"
 version = "2025.1"
 description = "Provider of IANA time zone data"
@@ -1595,5 +1612,5 @@ files = [
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.12,<3.13"
-content-hash = "c05af012807910b78f7a39d1598fe063808ae6659f4b754e1f66c54b2fc22ea0"
+python-versions = ">=3.11,<3.13"
+content-hash = "95a30c350d5f05b8ed0b2b95768e28911855a3624cc01d3560357924f427a07a"
