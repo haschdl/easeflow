@@ -15,9 +15,6 @@ def get_spark() -> SparkSession:
         return SparkSession.builder.getOrCreate()
 
 
-# Create PerlinNoise object once
-noise = PerlinNoise(octaves=10, seed=1)
-
 T = TypeVar("T", bound=easing_functions.easing.EasingBase)
 
 
@@ -26,6 +23,8 @@ def make_udf(
     start_value: float = 0.0,
     end_value: float = 1.0,
     noise_speed: float = 1.0,
+    octaves: int = 10,  # Allow configuring Perlin noise complexity
+    seed: int = 1,  # Ensure different seeds create independent noise patterns
 ) -> callable:
     """
     Creates a PySpark UDF (User Defined Function) that applies an easing function
@@ -64,6 +63,8 @@ def make_udf(
     display(df)
     ```
     """
+    # Create a new PerlinNoise instance per UDF
+    _noise = PerlinNoise(octaves=octaves, seed=seed)
 
     # Initialize the easing function for the range [0, 1]
     easing = easing_function(start=start_value, end=end_value, duration=1)
@@ -80,7 +81,7 @@ def make_udf(
             float: Smoothed output value with Perlin noise applied.
         """
         y0 = easing(t)  # Compute base easing value
-        noise_factor = noise(t * noise_speed)  # [-1, 1]
+        noise_factor = _noise(t * noise_speed)  # [-1, 1]
         y1 = y0 * (1 + noise_pct * noise_factor)  # Apply scaled noise effect
         return y1
 
