@@ -120,7 +120,7 @@ def make_udf(
     # Initialize the easing function for the range [0, 1]
     easing = easing_function(start=start_value, end=end_value, duration=1)
 
-    def get_val(t: float, noise_pct: float) -> float:
+    def get_val(t: float, noise_pct: float, offset: float = 0) -> float:
         """
         Computes the easing function value with optional Perlin noise.
 
@@ -132,7 +132,7 @@ def make_udf(
             float: Smoothed output value with Perlin noise applied.
         """
         y0 = easing(t)  # Compute base easing value
-        noise_factor = _noise(t * noise_speed)  # [-1, 1]
+        noise_factor = _noise(t * noise_speed + offset)  # [-1, 1]
         y1 = y0 * (1 + noise_pct * noise_factor)  # Apply scaled noise effect
         return y1
 
