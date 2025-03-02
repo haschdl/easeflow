@@ -15,7 +15,7 @@ def get_spark() -> SparkSession:
         return SparkSession.builder.getOrCreate()
 
 
-T = TypeVar("T", easing_functions.easing.EasingBase, None)
+T = TypeVar("T", bound=easing_functions.easing.EasingBase)
 
 
 def make_udf_noise(
@@ -36,6 +36,7 @@ def make_udf_noise(
     min_value (float): The minimum value of the Perlin noise range.
     max_value (float): The maximum value of the Perlin noise range.
     noise_speed (float): Controls the speed/frequency of Perlin noise variation.
+    noise_offset (float): The offset value for the Perlin noise generator-
     octaves (int): The number of octaves in the Perlin noise function.
     seed (int): The seed value for the Perlin noise generator.
 
@@ -52,7 +53,7 @@ def make_udf_noise(
     """
     _noise = PerlinNoise(octaves=octaves, seed=seed)
 
-    def get_val(t: float) -> float:
+    def get_val(t: float, offset: float = 0) -> float:
         """
         Computes the Perlin noise value based on the input `t` and `noise_speed`.
 
@@ -62,7 +63,7 @@ def make_udf_noise(
         Returns:
             float: Perlin noise value.
         """
-        noise_factor = _noise(t * noise_speed)  # [-1, 1]
+        noise_factor = _noise(offset + t * noise_speed)  # [-1, 1]
         return min_value + (max_value - min_value) * (1 + noise_factor) / 2
 
     return F.udf(get_val, FloatType(), useArrow=True)
@@ -117,10 +118,7 @@ def make_udf(
     _noise = PerlinNoise(octaves=octaves, seed=seed)
 
     # Initialize the easing function for the range [0, 1]
-    if easing_function is not None:
-        easing = easing_function(start=start_value, end=end_value, duration=1)
-    else:
-        easing = lambda t: 1
+    easing = easing_function(start=start_value, end=end_value, duration=1)
 
     def get_val(t: float, noise_pct: float) -> float:
         """
